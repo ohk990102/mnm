@@ -4,21 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mnm"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
   { name="ohk990102", email="ohk990102@gmail.com" },
 ]
 description = "A simple python library for pentesting firewall protected webapp"
 readme = "README.md"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+  "requests>=2.26.0",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/ohk990102/mnm"
 "Bug Tracker" = "https://github.com/ohk990102/mnm/issues"
-
-[project.optional-dependencies]
-"requests" = ["requests>=2.26.0"]
