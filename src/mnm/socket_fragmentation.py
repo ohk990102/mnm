@@ -5,11 +5,12 @@ from sys import platform
 from .wrapper import MnmWrapper
 
 class SocketFragmentation(MnmWrapper):
-    def __init__(self, timeout=0.1, interval=0.01, slice=1):
+    def __init__(self, timeout=0.1, interval=0.01, slice=1, linux_ack_check=True):
         super().__init__()
         self.timeout = timeout
         self.interval = interval
         self.slice = slice
+        self.linux_ack_check = linux_ack_check
 
     def enable(self):
         if self.saved_state:
@@ -17,7 +18,7 @@ class SocketFragmentation(MnmWrapper):
 
         def flush_socket(sock: socket.socket) -> bool:
             
-            if platform == 'linux' or platform == 'linux2':
+            if self.linux_ack_check and platform == 'linux' or platform == 'linux2':
                 from ctypes import c_ulong
                 from termios import TIOCOUTQ
                 from fcntl import ioctl
