@@ -1,4 +1,7 @@
 import socket
+import ssl
+import time
+from sys import platform
 from .wrapper import MnmWrapper
 
 class SocketFragmentation(MnmWrapper):
@@ -13,8 +16,7 @@ class SocketFragmentation(MnmWrapper):
             return
 
         def flush_socket(sock: socket.socket) -> bool:
-            from sys import platform
-            import time
+            
             if platform == 'linux' or platform == 'linux2':
                 from ctypes import c_ulong
                 from termios import TIOCOUTQ
@@ -36,31 +38,49 @@ class SocketFragmentation(MnmWrapper):
             # not all data has been sent
             return False
 
-        def send(s, data, flags=0):
+        def _socket_send(s, data, flags=0):
             nbytes = 0
             for i in range(0, len(data), self.slice):
-                nbytes += super(socket.socket, s).send(data[i:i+self.slice], flags)
+                nbytes += self.saved_state['socket.send'].send(s, data[i:i+self.slice], flags)
                 flush_socket(s)
             return nbytes
 
-        def sendall(s, data, flags=0):
+        def _socket_sendall(s, data, flags=0):
             for i in range(0, len(data), self.slice):
-                super(socket.socket, s).sendall(data[i:i+self.slice], flags)
+                self.saved_state['socket.sendall'].sendall(s, data[i:i+self.slice], flags)
+                flush_socket(s)
+            return None
+
+        def _sslsocket_send(s: ssl.SSLSocket, data, flags=0):
+            nbytes = 0
+            for i in range(0, len(data), self.slice):
+                nbytes += self.saved_state['SSLSocket.send'](s, data[i:i+self.slice], flags)
+                flush_socket(s)
+            return nbytes
+
+        def _sslsocket_sendall(s: ssl.SSLSocket, data, flags=0):
+            for i in range(0, len(data), self.slice):
+                self.saved_state['SSLSocket.sendall'](s, data[i:i+self.slice], flags)
                 flush_socket(s)
             return None
 
         self.saved_state = {
-            'send': socket.socket.send,
-            'sendall': socket.socket.sendall
+            'socket.send': socket.socket.send,
+            'socket.sendall': socket.socket.sendall,
+            'SSLSocket.send': ssl.SSLSocket.send,
+            'SSLSocket.sendall': ssl.SSLSocket.sendall
         }
 
-        socket.socket.send = send
-        socket.socket.sendall = sendall
+        socket.socket.send = _socket_send
+        socket.socket.sendall = _socket_sendall
+        ssl.SSLSocket.send = _sslsocket_send
+        ssl.SSLSocket.sendall = _sslsocket_sendall
 
     def disable(self):
-        import socket
         if self.saved_state:
-            socket.socket.send = self.saved_state['send']
-            socket.socket.sendall = self.saved_state['sendall']
+            socket.socket.send = self.saved_state['socket.send']
+            socket.socket.sendall = self.saved_state['socket.sendall']
+            ssl.SSLSocket.send = self.saved_state['SSLSocket.send']
+            ssl.SSLSocket.sendall = self.saved_state['SSLSocket.sendall']
 
         self.saved_state = None
