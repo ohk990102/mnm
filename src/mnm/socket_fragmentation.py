@@ -42,13 +42,13 @@ class SocketFragmentation(MnmWrapper):
         def _socket_send(s, data, flags=0):
             nbytes = 0
             for i in range(0, len(data), self.slice):
-                nbytes += self.saved_state['socket.send'].send(s, data[i:i+self.slice], flags)
+                nbytes += self.saved_state['socket.send'](s, data[i:i+self.slice], flags)
                 flush_socket(s)
             return nbytes
 
         def _socket_sendall(s, data, flags=0):
             for i in range(0, len(data), self.slice):
-                self.saved_state['socket.sendall'].sendall(s, data[i:i+self.slice], flags)
+                self.saved_state['socket.sendall'](s, data[i:i+self.slice], flags)
                 flush_socket(s)
             return None
 
